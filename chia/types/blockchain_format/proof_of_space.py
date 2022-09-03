@@ -76,11 +76,13 @@ class ProofOfSpace(Streamable):
         plot_id: bytes32,
         challenge_hash: bytes32,
         signage_point: bytes32,
+        number_zero_bits_plot_filter: int,
     ) -> bool:
         plot_filter: BitArray = BitArray(
             ProofOfSpace.calculate_plot_filter_input(plot_id, challenge_hash, signage_point)
         )
-        return plot_filter[: constants.NUMBER_ZERO_BITS_PLOT_FILTER].uint == 0
+        # return plot_filter[: constants.NUMBER_ZERO_BITS_PLOT_FILTER].uint == 0
+        return plot_filter[: number_zero_bits_plot_filter].uint == 0
 
     @staticmethod
     def calculate_plot_filter_input(plot_id: bytes32, challenge_hash: bytes32, signage_point: bytes32) -> bytes32:
