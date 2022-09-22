@@ -4,10 +4,16 @@ min_mainnet_k_size: 32
 ping_interval: 120
 self_hostname: &self_hostname "localhost"
 prefer_ipv6: False
-daemon_port: 59400
+daemon_port: 59800
 daemon_max_message_size: 50000000 # maximum size of RPC message in bytes
 inbound_rate_limit_percent: 100
 outbound_rate_limit_percent: 30
+
+# Limit the number of start_full_node worker processes to reduce ram and cpu usage
+# This allows users to farm more forks without running out of ram
+# Setting this too low reduces sync speed, but a synced node can stay synced with a multiprocessing_limit of 2
+# A value higher than 61 takes no effect, as stai limits the workers to 61 (windows server related python bug)
+# multiprocessing_limit: 4
 
 network_overrides: &network_overrides
   constants:
@@ -76,7 +82,7 @@ network_overrides: &network_overrides
       default_full_node_port: 5980
     testnet0:
       address_prefix: "txch"
-      default_full_node_port: 58444
+      default_full_node_port: 55980
     testnet1:
       address_prefix: "txch"
     testnet2:
@@ -87,10 +93,10 @@ network_overrides: &network_overrides
       address_prefix: "txch"
     testnet7:
       address_prefix: "txch"
-      default_full_node_port: 58444
+      default_full_node_port: 55980
     testnet10:
       address_prefix: "txch"
-      default_full_node_port: 58444
+      default_full_node_port: 55980
 
 selected_network: &selected_network "mainnet"
 ALERTS_URL: https://agem.ae/mainnet_alert.txt
@@ -127,7 +133,7 @@ logging: &logging
 seeder:
   # The fake full node used for crawling will run on this port.
   port: 5944
-  # Most full nodes on the network run on this port. (i.e. 8444 for mainnet, 58444 for testnet).
+  # Most full nodes on the network run on this port. (i.e. 5980 for mainnet, 55980 for testnet).
   other_peers_port: 5980
   # This will override the default full_node.peer_connect_timeout for the crawler full node
   peer_connect_timeout: 2
@@ -135,7 +141,7 @@ seeder:
   crawler_db_path: "crawler.db"
   # Peers used for the initial run.
   bootstrap_peers:
-    - "node.chia.net"
+    - "node.agem.ae"
   # Only consider nodes synced at least to this height.
   minimum_height: 240000
   # How many of a particular version we need to see before reporting it in the logs
@@ -410,7 +416,7 @@ full_node:
   # List of trusted DNS seeders to bootstrap from.
   # If you modify this, please change the hardcode as well from FullNode.set_server()
   dns_servers:
-    - "dns-introducer.chia.net"
+    - "dns-introducer.agem.ae"
   farmer_peer:
       host: *self_hostname
       port: 5947
@@ -418,7 +424,7 @@ full_node:
       host: *self_hostname
       port: 5946
   introducer_peer:
-      host: introducer.chia.net  # Chia AWS introducer IPv4/IPv6
+      host: introducer.agem.ae  # Chia AWS introducer IPv4/IPv6
       port: 5980
   wallet_peer:
     host: *self_hostname
@@ -435,7 +441,7 @@ full_node:
 
 ui:
    # The ui node server (if run) will run on this port
-  port: 5222
+  port: 5922
 
   # Which port to use to communicate with the full node
   rpc_port: 5580
@@ -449,7 +455,7 @@ ui:
   # this is where the electron UI will find its daemon
   # defaults to the one running locally with its private keys
   daemon_host: *self_hostname
-  daemon_port: 59400
+  daemon_port: 59800
   daemon_ssl:
     private_crt: config/ssl/daemon/private_daemon.crt
     private_key: config/ssl/daemon/private_daemon.key
@@ -471,7 +477,7 @@ introducer:
 
 wallet:
   port: 5949
-  rpc_port: 9256
+  rpc_port: 9756
 
   enable_profiler: False
 
@@ -487,10 +493,15 @@ wallet:
 
   connect_to_unknown_peers: True
 
+  # The minimum height that we care about for our transactions. Set to zero
+  # If we are restoring from private key and don't know the height.
+  starting_height: 0
+  start_height_buffer: 100  # Wallet will stop fly sync at starting_height - buffer
+  num_sync_batches: 50
   initial_num_public_keys: 425
 
   dns_servers:
-    - "dns-introducer.chia.net"
+    - "dns-introducer.agem.ae"
 
   full_node_peer:
     host: *self_hostname
@@ -523,7 +534,7 @@ wallet:
   recent_peer_threshold: 6000
 
   introducer_peer:
-    host: introducer.chia.net # Chia AWS introducer IPv4/IPv6
+    host: introducer.agem.ae # Chia AWS introducer IPv4/IPv6
     port: 5980
 
   ssl:
@@ -569,7 +580,7 @@ data_layer:
   port: 8561
   wallet_peer:
     host: localhost
-    port: 9256
+    port: 9756
 
   database_path: "data_layer/db/data_layer_CHALLENGE.sqlite"
   # The location where the server files will be stored.
@@ -579,6 +590,8 @@ data_layer:
   # Data for running a data layer server.
   host_ip: 0.0.0.0
   host_port: 8575
+  # Switch this to True if we want to run the server.
+  # run_server: True
   # Data for running a data layer client.
   manage_data_interval: 60
   selected_network: *selected_network
